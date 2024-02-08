@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Arrow.DeveloperTest.Strategies
 {
-    internal class FasterPaymentsPaymentValidationStrategy : IPaymentValidationStrategy
+    public class FasterPaymentsPaymentValidationStrategy : IPaymentValidationStrategy
     {
         public bool IsValid(Account account, MakePaymentRequest request)
         {

@@ -2,7 +2,7 @@
 
 namespace Arrow.DeveloperTest.Strategies
 {
-    internal interface IPaymentValidationStrategy
+    public interface IPaymentValidationStrategy
     {
         bool IsValid(Account account, MakePaymentRequest request);
     }

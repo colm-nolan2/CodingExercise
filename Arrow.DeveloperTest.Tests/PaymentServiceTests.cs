@@ -1,7 +1,9 @@
 ﻿using Arrow.DeveloperTest.Data;
 using Arrow.DeveloperTest.Services;
+using Arrow.DeveloperTest.Strategies;
 using Arrow.DeveloperTest.Types;
 using Moq;
+using System.Collections.Generic;
 using System.Security.Principal;
 using Xunit;
 
@@ -9,12 +11,28 @@ namespace Arrow.DeveloperTest.Tests
 {
     public class PaymentServiceTests
     {
+
+        Dictionary<PaymentScheme, IPaymentValidationStrategy> _paymentValidationStrategies;
+        public PaymentServiceTests()
+        {
+            var bacsStrategy = new BacsPaymentValidationStrategy();
+            var fasterPaymentsStrategy = new FasterPaymentsPaymentValidationStrategy();
+            var chapsStrategy = new ChapsPaymentValidationStrategy();
+
+            _paymentValidationStrategies = new Dictionary<PaymentScheme, IPaymentValidationStrategy>
+            {
+                { PaymentScheme.Bacs, bacsStrategy },
+                { PaymentScheme.FasterPayments, fasterPaymentsStrategy },
+                { PaymentScheme.Chaps, chapsStrategy },
+            };
+        }
+
         [Fact]
         public void MakePayment_BacsScheme_SuccessfulPayment_UpdateAccountCalledWithNewBalance()
         {
             // Arrange
             var mockAccountDataStore = new Mock<IAccountDataStore>();
-            var paymentService = new PaymentService(mockAccountDataStore.Object);
+            var paymentService = new PaymentService(mockAccountDataStore.Object, _paymentValidationStrategies);
             var origBalance = 100;
             var paymentRequest = new MakePaymentRequest
             {
@@ -45,7 +63,7 @@ namespace Arrow.DeveloperTest.Tests
         {
             // Arrange
             var mockAccountDataStore = new Mock<IAccountDataStore>();
-            var bacsPaymentService = new PaymentService(mockAccountDataStore.Object);
+            var bacsPaymentService = new PaymentService(mockAccountDataStore.Object, _paymentValidationStrategies);
             var request = new MakePaymentRequest
             {
                 DebtorAccountNumber = "NonExistingAccount",
@@ -67,7 +85,7 @@ namespace Arrow.DeveloperTest.Tests
         {
             // Arrange
             var mockAccountDataStore = new Mock<IAccountDataStore>();
-            var bacsPaymentService = new PaymentService(mockAccountDataStore.Object);
+            var bacsPaymentService = new PaymentService(mockAccountDataStore.Object, _paymentValidationStrategies);
             var request = new MakePaymentRequest
             {
                 DebtorAccountNumber = "ExistingAccount",
@@ -90,7 +108,7 @@ namespace Arrow.DeveloperTest.Tests
         {
             // Arrange
             var mockAccountDataStore = new Mock<IAccountDataStore>();
-            var paymentService = new PaymentService(mockAccountDataStore.Object);
+            var paymentService = new PaymentService(mockAccountDataStore.Object, _paymentValidationStrategies);
             var origBalance = 100;
             var paymentRequest = new MakePaymentRequest
             {
@@ -122,7 +140,7 @@ namespace Arrow.DeveloperTest.Tests
         {
             // Arrange
             var mockAccountDataStore = new Mock<IAccountDataStore>();
-            var paymentService = new PaymentService(mockAccountDataStore.Object);
+            var paymentService = new PaymentService(mockAccountDataStore.Object, _paymentValidationStrategies);
             var origBalance = 100;
             var paymentRequest = new MakePaymentRequest
             {
@@ -153,7 +171,7 @@ namespace Arrow.DeveloperTest.Tests
         {
             // Arrange
             var mockAccountDataStore = new Mock<IAccountDataStore>();
-            var bacsPaymentService = new PaymentService(mockAccountDataStore.Object);
+            var bacsPaymentService = new PaymentService(mockAccountDataStore.Object, _paymentValidationStrategies);
             var request = new MakePaymentRequest
             {
                 DebtorAccountNumber = "NonExistingAccount",
@@ -175,7 +193,7 @@ namespace Arrow.DeveloperTest.Tests
         {
             // Arrange
             var mockAccountDataStore = new Mock<IAccountDataStore>();
-            var bacsPaymentService = new PaymentService(mockAccountDataStore.Object);
+            var bacsPaymentService = new PaymentService(mockAccountDataStore.Object, _paymentValidationStrategies);
             var request = new MakePaymentRequest
             {
                 DebtorAccountNumber = "ExistingAccount",
@@ -198,7 +216,7 @@ namespace Arrow.DeveloperTest.Tests
         {
             // Arrange
             var mockAccountDataStore = new Mock<IAccountDataStore>();
-            var paymentService = new PaymentService(mockAccountDataStore.Object);
+            var paymentService = new PaymentService(mockAccountDataStore.Object, _paymentValidationStrategies);
             var origBalance = 100;
             var paymentRequest = new MakePaymentRequest
             {
@@ -229,7 +247,7 @@ namespace Arrow.DeveloperTest.Tests
         {
             // Arrange
             var mockAccountDataStore = new Mock<IAccountDataStore>();
-            var paymentService = new PaymentService(mockAccountDataStore.Object);
+            var paymentService = new PaymentService(mockAccountDataStore.Object, _paymentValidationStrategies);
             var origBalance = 100;
             var paymentRequest = new MakePaymentRequest
             {
@@ -259,7 +277,7 @@ namespace Arrow.DeveloperTest.Tests
         {
             // Arrange
             var mockAccountDataStore = new Mock<IAccountDataStore>();
-            var bacsPaymentService = new PaymentService(mockAccountDataStore.Object);
+            var bacsPaymentService = new PaymentService(mockAccountDataStore.Object, _paymentValidationStrategies);
             var request = new MakePaymentRequest
             {
                 DebtorAccountNumber = "NonExistingAccount",
@@ -281,7 +299,7 @@ namespace Arrow.DeveloperTest.Tests
         {
             // Arrange
             var mockAccountDataStore = new Mock<IAccountDataStore>();
-            var bacsPaymentService = new PaymentService(mockAccountDataStore.Object);
+            var bacsPaymentService = new PaymentService(mockAccountDataStore.Object, _paymentValidationStrategies);
             var request = new MakePaymentRequest
             {
                 DebtorAccountNumber = "ExistingAccount",

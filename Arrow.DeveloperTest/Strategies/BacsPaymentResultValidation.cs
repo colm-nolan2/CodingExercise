@@ -2,7 +2,7 @@
 
 namespace Arrow.DeveloperTest.Strategies
 {
-    internal class BacsPaymentValidationStrategy : IPaymentValidationStrategy
+    public class BacsPaymentValidationStrategy : IPaymentValidationStrategy
     {
         public bool IsValid(Account account, MakePaymentRequest request)
         {

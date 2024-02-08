@@ -1,16 +1,20 @@
 ﻿using Arrow.DeveloperTest.Data;
 using Arrow.DeveloperTest.Strategies;
 using Arrow.DeveloperTest.Types;
+using System.Collections.Generic;
 
 namespace Arrow.DeveloperTest.Services
 {
     public class PaymentService : IPaymentService
     {
         private readonly IAccountDataStore _accountDataStore;
+        private readonly Dictionary<PaymentScheme, IPaymentValidationStrategy> _paymentValidationStrategies;
 
-        public PaymentService(IAccountDataStore accountDataStore)
+        public PaymentService(IAccountDataStore accountDataStore,
+                                Dictionary<PaymentScheme, IPaymentValidationStrategy> paymentValidationStrategies)
         {
             _accountDataStore = accountDataStore;
+            _paymentValidationStrategies = paymentValidationStrategies;
         }
         public MakePaymentResult MakePayment(MakePaymentRequest request)
         {
@@ -31,29 +35,15 @@ namespace Arrow.DeveloperTest.Services
             return result;
         }
 
-        private bool IsValidPayment(Account account, MakePaymentRequest request)
+       private bool IsValidPayment(Account account, MakePaymentRequest request)
+    {
+        if (_paymentValidationStrategies.TryGetValue(request.PaymentScheme, out var strategy))
         {
-            IPaymentValidationStrategy strategy;
-
-            switch (request.PaymentScheme)
-            {
-                case PaymentScheme.Bacs:
-                    strategy = new BacsPaymentValidationStrategy();
-                    break;
-
-                case PaymentScheme.FasterPayments:
-                    strategy = new FasterPaymentsPaymentValidationStrategy();
-                    break;
-
-                case PaymentScheme.Chaps:
-                    strategy = new ChapsPaymentValidationStrategy();
-                    break;
-
-                default:
-                    return false;
-            }
-
             return strategy.IsValid(account, request);
         }
+
+        // Unknown payment scheme
+        return false;
+    }
     }
 }
