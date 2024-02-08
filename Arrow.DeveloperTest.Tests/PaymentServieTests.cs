@@ -10,7 +10,7 @@ namespace Arrow.DeveloperTest.Tests
     public class BacsPaymentServiceTests
     {
         [Fact]
-        public void MakePayment_BacsScheme_SuccessfulPayment_UpdateAccountCalled()
+        public void MakePayment_BacsScheme_SuccessfulPayment_UpdateAccountCalledWithNewBalance()
         {
             // Arrange
             var mockAccountDataStore = new Mock<IAccountDataStore>();
@@ -86,7 +86,7 @@ namespace Arrow.DeveloperTest.Tests
         }
 
         [Fact]
-        public void MakePayment_ChapsScheme_SuccessfulPayment_UpdateAccountCalled()
+        public void MakePayment_ChapsScheme_SuccessfulPayment_UpdateAccountCalledWithNewBalance()
         {
             // Arrange
             var mockAccountDataStore = new Mock<IAccountDataStore>();
@@ -162,7 +162,7 @@ namespace Arrow.DeveloperTest.Tests
         }
 
         [Fact]
-        public void MakePayment_FasterPaymentsScheme_SuccessfulPayment_UpdateAccountCalled()
+        public void MakePayment_FasterPaymentsScheme_SuccessfulPayment_UpdateAccountCalledWithNewBalance()
         {
             // Arrange
             var mockAccountDataStore = new Mock<IAccountDataStore>();
