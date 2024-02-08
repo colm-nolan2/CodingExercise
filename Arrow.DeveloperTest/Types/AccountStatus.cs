@@ -2,6 +2,7 @@
 {
     public enum AccountStatus
     {
+        None,
         Live,
         Disabled,
         InboundPaymentsOnly
