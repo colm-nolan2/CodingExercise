@@ -1,17 +1,21 @@
 ﻿using Arrow.DeveloperTest.Data;
 using Arrow.DeveloperTest.Types;
-using System.Configuration;
 
 namespace Arrow.DeveloperTest.Services
 {
     public class PaymentService : IPaymentService
     {
+        private readonly IAccountDataStore _accountDataStore;
+
+        public PaymentService(IAccountDataStore accountDataStore)
+        {
+            _accountDataStore = accountDataStore;
+        }
         public MakePaymentResult MakePayment(MakePaymentRequest request)
         {
-            var accountDataStoreGetData = new AccountDataStore();
-            Account account = accountDataStoreGetData.GetAccount(request.DebtorAccountNumber);
+            var account = _accountDataStore.GetAccount(request.DebtorAccountNumber);
             
-            var result = new MakePaymentResult();
+            var result = new MakePaymentResult { Success = true };
 
             switch (request.PaymentScheme)
             {
@@ -55,14 +59,14 @@ namespace Arrow.DeveloperTest.Services
                         result.Success = false;
                     }
                     break;
+
             }
 
             if (result.Success)
             {
                 account.Balance -= request.Amount;
 
-                var accountDataStoreUpdateData = new AccountDataStore();
-                accountDataStoreUpdateData.UpdateAccount(account);
+                _accountDataStore.UpdateAccount(account);
             }
 
             return result;
