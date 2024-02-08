@@ -1,4 +1,5 @@
 ﻿using Arrow.DeveloperTest.Data;
+using Arrow.DeveloperTest.Strategies;
 using Arrow.DeveloperTest.Types;
 
 namespace Arrow.DeveloperTest.Services
@@ -14,53 +15,11 @@ namespace Arrow.DeveloperTest.Services
         public MakePaymentResult MakePayment(MakePaymentRequest request)
         {
             var account = _accountDataStore.GetAccount(request.DebtorAccountNumber);
-            
-            var result = new MakePaymentResult { Success = true };
 
-            switch (request.PaymentScheme)
-            {
-                case PaymentScheme.Bacs:
-                    if (account == null)
-                    {
-                        result.Success = false;
-                    }
-                    else if (!account.AllowedPaymentSchemes.HasFlag(AllowedPaymentSchemes.Bacs))
-                    {
-                        result.Success = false;
-                    }
-                    break;
-
-                case PaymentScheme.FasterPayments:
-                    if (account == null)
-                    {
-                        result.Success = false;
-                    }
-                    else if (!account.AllowedPaymentSchemes.HasFlag(AllowedPaymentSchemes.FasterPayments))
-                    {
-                        result.Success = false;
-                    }
-                    else if (account.Balance < request.Amount)
-                    {
-                        result.Success = false;
-                    }
-                    break;
-
-                case PaymentScheme.Chaps:
-                    if (account == null)
-                    {
-                        result.Success = false;
-                    }
-                    else if (!account.AllowedPaymentSchemes.HasFlag(AllowedPaymentSchemes.Chaps))
-                    {
-                        result.Success = false;
-                    }
-                    else if (account.Status != AccountStatus.Live)
-                    {
-                        result.Success = false;
-                    }
-                    break;
-
-            }
+            var result = new MakePaymentResult 
+            { 
+                Success = IsValidPayment(account, request) 
+            };
 
             if (result.Success)
             {
@@ -70,6 +29,31 @@ namespace Arrow.DeveloperTest.Services
             }
 
             return result;
+        }
+
+        private bool IsValidPayment(Account account, MakePaymentRequest request)
+        {
+            IPaymentValidationStrategy strategy;
+
+            switch (request.PaymentScheme)
+            {
+                case PaymentScheme.Bacs:
+                    strategy = new BacsPaymentValidationStrategy();
+                    break;
+
+                case PaymentScheme.FasterPayments:
+                    strategy = new FasterPaymentsPaymentValidationStrategy();
+                    break;
+
+                case PaymentScheme.Chaps:
+                    strategy = new ChapsPaymentValidationStrategy();
+                    break;
+
+                default:
+                    return false;
+            }
+
+            return strategy.IsValid(account, request);
         }
     }
 }

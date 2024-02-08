@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Arrow.DeveloperTest.Tests
 {
-    public class BacsPaymentServiceTests
+    public class PaymentServiceTests
     {
         [Fact]
         public void MakePayment_BacsScheme_SuccessfulPayment_UpdateAccountCalledWithNewBalance()
