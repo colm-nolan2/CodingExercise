@@ -1,28 +1,34 @@
 ﻿using Arrow.DeveloperTest.Types;
+using System;
+using System.Collections.Generic;
+using System.Text;
 
 namespace Arrow.DeveloperTest.Strategies
 {
-    public class BacsPaymentValidationStrategy : IPaymentValidationStrategy
+    public class ChapsPaymentValidation : IPaymentValidationStrategy
     {
         /// <summary>
-        /// Validation for IsValid Payment, validation logic and structure is more readable here (subjective)
+        /// Validation for Chaps Payment, validation logic and structure is more readable here (subjective)
         /// </summary>
         /// <param name="account"></param>
         /// <param name="request"></param>
         /// <returns>bool</returns>
         public bool IsValid(Account account, MakePaymentRequest request)
-        {
+        {            
             var isValid = false; //assume not valid initially
 
             if (account != null)
             {
-                if (account.AllowedPaymentSchemes.HasFlag(AllowedPaymentSchemes.Bacs))
+                if (account.AllowedPaymentSchemes.HasFlag(AllowedPaymentSchemes.Chaps))
                 {
-                    isValid = true;
+                    if (account.Status == AccountStatus.Live)
+                    {
+                        isValid = true;
+                    }
                 }
             }
 
             return isValid;
-        }       
+        }
     }
 }

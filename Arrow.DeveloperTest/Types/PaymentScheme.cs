@@ -2,6 +2,7 @@
 {
     public enum PaymentScheme
     {
+        None,
         FasterPayments,
         Bacs,
         Chaps

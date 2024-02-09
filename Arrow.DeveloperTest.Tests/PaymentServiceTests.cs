@@ -16,8 +16,8 @@ namespace Arrow.DeveloperTest.Tests
         public PaymentServiceTests()
         {
             var bacsStrategy = new BacsPaymentValidationStrategy();
-            var fasterPaymentsStrategy = new FasterPaymentsPaymentValidationStrategy();
-            var chapsStrategy = new ChapsPaymentValidationStrategy();
+            var fasterPaymentsStrategy = new FasterPaymentsPaymentValidation();
+            var chapsStrategy = new ChapsPaymentValidation();
 
             _paymentValidationStrategies = new Dictionary<PaymentScheme, IPaymentValidationStrategy>
             {

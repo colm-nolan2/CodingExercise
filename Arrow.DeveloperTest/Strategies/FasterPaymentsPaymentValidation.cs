@@ -1,11 +1,14 @@
 ﻿using Arrow.DeveloperTest.Types;
+using System;
+using System.Collections.Generic;
+using System.Text;
 
 namespace Arrow.DeveloperTest.Strategies
 {
-    public class BacsPaymentValidationStrategy : IPaymentValidationStrategy
+    public class FasterPaymentsPaymentValidation : IPaymentValidationStrategy
     {
         /// <summary>
-        /// Validation for IsValid Payment, validation logic and structure is more readable here (subjective)
+        /// Validation for FasterPayments Payment, validation logic and structure is more readable here (subjective)
         /// </summary>
         /// <param name="account"></param>
         /// <param name="request"></param>
@@ -16,13 +19,16 @@ namespace Arrow.DeveloperTest.Strategies
 
             if (account != null)
             {
-                if (account.AllowedPaymentSchemes.HasFlag(AllowedPaymentSchemes.Bacs))
+                if (account.AllowedPaymentSchemes.HasFlag(AllowedPaymentSchemes.FasterPayments))
                 {
-                    isValid = true;
+                    if (account.Balance >= request.Amount)
+                    {
+                        isValid = true;
+                    }
                 }
             }
 
             return isValid;
-        }       
+        }
     }
 }

@@ -16,6 +16,12 @@ namespace Arrow.DeveloperTest.Services
             _accountDataStore = accountDataStore;
             _paymentValidationStrategies = paymentValidationStrategies;
         }
+
+        /// <summary>
+        /// Payment method
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns>MakePaymentResult</returns>
         public MakePaymentResult MakePayment(MakePaymentRequest request)
         {
             var account = _accountDataStore.GetAccount(request.DebtorAccountNumber);
@@ -34,16 +40,21 @@ namespace Arrow.DeveloperTest.Services
 
             return result;
         }
-
-       private bool IsValidPayment(Account account, MakePaymentRequest request)
-    {
-        if (_paymentValidationStrategies.TryGetValue(request.PaymentScheme, out var strategy))
+        
+        /// <summary>
+        /// Checks whether a payment request and account is valid
+        /// </summary>
+        /// <param name="account"></param>
+        /// <param name="request"></param>
+        /// <returns>bool</returns>
+        private bool IsValidPayment(Account account, MakePaymentRequest request)
         {
-            return strategy.IsValid(account, request);
+            if (_paymentValidationStrategies.TryGetValue(request.PaymentScheme, out var strategy))
+            {
+                return strategy.IsValid(account, request);
+            }
+            
+            return false; // Unknown payment scheme
         }
-
-        // Unknown payment scheme
-        return false;
-    }
     }
 }
