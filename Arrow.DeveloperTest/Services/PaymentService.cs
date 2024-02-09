@@ -1,66 +1,35 @@
 ﻿using Arrow.DeveloperTest.Data;
+using Arrow.DeveloperTest.Strategies;
 using Arrow.DeveloperTest.Types;
+using System.Collections.Generic;
 
 namespace Arrow.DeveloperTest.Services
 {
     public class PaymentService : IPaymentService
     {
         private readonly IAccountDataStore _accountDataStore;
+        private readonly Dictionary<PaymentScheme, IPaymentValidationStrategy> _paymentValidationStrategies;
 
-        public PaymentService(IAccountDataStore accountDataStore)
+        public PaymentService(IAccountDataStore accountDataStore,
+                                Dictionary<PaymentScheme, IPaymentValidationStrategy> paymentValidationStrategies)
         {
             _accountDataStore = accountDataStore;
+            _paymentValidationStrategies = paymentValidationStrategies;
         }
+
+        /// <summary>
+        /// Payment method
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns>MakePaymentResult</returns>
         public MakePaymentResult MakePayment(MakePaymentRequest request)
         {
             var account = _accountDataStore.GetAccount(request.DebtorAccountNumber);
-            
-            var result = new MakePaymentResult { Success = true };
 
-            switch (request.PaymentScheme)
-            {
-                case PaymentScheme.Bacs:
-                    if (account == null)
-                    {
-                        result.Success = false;
-                    }
-                    else if (!account.AllowedPaymentSchemes.HasFlag(AllowedPaymentSchemes.Bacs))
-                    {
-                        result.Success = false;
-                    }
-                    break;
-
-                case PaymentScheme.FasterPayments:
-                    if (account == null)
-                    {
-                        result.Success = false;
-                    }
-                    else if (!account.AllowedPaymentSchemes.HasFlag(AllowedPaymentSchemes.FasterPayments))
-                    {
-                        result.Success = false;
-                    }
-                    else if (account.Balance < request.Amount)
-                    {
-                        result.Success = false;
-                    }
-                    break;
-
-                case PaymentScheme.Chaps:
-                    if (account == null)
-                    {
-                        result.Success = false;
-                    }
-                    else if (!account.AllowedPaymentSchemes.HasFlag(AllowedPaymentSchemes.Chaps))
-                    {
-                        result.Success = false;
-                    }
-                    else if (account.Status != AccountStatus.Live)
-                    {
-                        result.Success = false;
-                    }
-                    break;
-
-            }
+            var result = new MakePaymentResult 
+            { 
+                Success = IsValidPayment(account, request) 
+            };
 
             if (result.Success)
             {
@@ -70,6 +39,22 @@ namespace Arrow.DeveloperTest.Services
             }
 
             return result;
+        }
+        
+        /// <summary>
+        /// Checks whether a payment request and account is valid
+        /// </summary>
+        /// <param name="account"></param>
+        /// <param name="request"></param>
+        /// <returns>bool</returns>
+        private bool IsValidPayment(Account account, MakePaymentRequest request)
+        {
+            if (_paymentValidationStrategies.TryGetValue(request.PaymentScheme, out var strategy))
+            {
+                return strategy.IsValid(account, request);
+            }
+            
+            return false; // Unknown payment scheme
         }
     }
 }

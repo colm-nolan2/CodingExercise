@@ -1,20 +1,38 @@
 ﻿using Arrow.DeveloperTest.Data;
 using Arrow.DeveloperTest.Services;
+using Arrow.DeveloperTest.Strategies;
 using Arrow.DeveloperTest.Types;
 using Moq;
+using System.Collections.Generic;
 using System.Security.Principal;
 using Xunit;
 
 namespace Arrow.DeveloperTest.Tests
 {
-    public class BacsPaymentServiceTests
+    public class PaymentServiceTests
     {
+
+        Dictionary<PaymentScheme, IPaymentValidationStrategy> _paymentValidationStrategies;
+        public PaymentServiceTests()
+        {
+            var bacsStrategy = new BacsPaymentValidationStrategy();
+            var fasterPaymentsStrategy = new FasterPaymentsPaymentValidation();
+            var chapsStrategy = new ChapsPaymentValidation();
+
+            _paymentValidationStrategies = new Dictionary<PaymentScheme, IPaymentValidationStrategy>
+            {
+                { PaymentScheme.Bacs, bacsStrategy },
+                { PaymentScheme.FasterPayments, fasterPaymentsStrategy },
+                { PaymentScheme.Chaps, chapsStrategy },
+            };
+        }
+
         [Fact]
-        public void MakePayment_BacsScheme_SuccessfulPayment_UpdateAccountCalled()
+        public void MakePayment_BacsScheme_SuccessfulPayment_UpdateAccountCalledWithNewBalance()
         {
             // Arrange
             var mockAccountDataStore = new Mock<IAccountDataStore>();
-            var paymentService = new PaymentService(mockAccountDataStore.Object);
+            var paymentService = new PaymentService(mockAccountDataStore.Object, _paymentValidationStrategies);
             var origBalance = 100;
             var paymentRequest = new MakePaymentRequest
             {
@@ -45,7 +63,7 @@ namespace Arrow.DeveloperTest.Tests
         {
             // Arrange
             var mockAccountDataStore = new Mock<IAccountDataStore>();
-            var bacsPaymentService = new PaymentService(mockAccountDataStore.Object);
+            var bacsPaymentService = new PaymentService(mockAccountDataStore.Object, _paymentValidationStrategies);
             var request = new MakePaymentRequest
             {
                 DebtorAccountNumber = "NonExistingAccount",
@@ -67,7 +85,7 @@ namespace Arrow.DeveloperTest.Tests
         {
             // Arrange
             var mockAccountDataStore = new Mock<IAccountDataStore>();
-            var bacsPaymentService = new PaymentService(mockAccountDataStore.Object);
+            var bacsPaymentService = new PaymentService(mockAccountDataStore.Object, _paymentValidationStrategies);
             var request = new MakePaymentRequest
             {
                 DebtorAccountNumber = "ExistingAccount",
@@ -86,11 +104,11 @@ namespace Arrow.DeveloperTest.Tests
         }
 
         [Fact]
-        public void MakePayment_ChapsScheme_SuccessfulPayment_UpdateAccountCalled()
+        public void MakePayment_ChapsScheme_LiveAccount_BalanceMoreThanPaymentAmount_SuccessfulPayment_UpdateAccountCalledWithNewBalance()
         {
             // Arrange
             var mockAccountDataStore = new Mock<IAccountDataStore>();
-            var paymentService = new PaymentService(mockAccountDataStore.Object);
+            var paymentService = new PaymentService(mockAccountDataStore.Object, _paymentValidationStrategies);
             var origBalance = 100;
             var paymentRequest = new MakePaymentRequest
             {
@@ -101,7 +119,8 @@ namespace Arrow.DeveloperTest.Tests
             var account = new Account
             {
                 AllowedPaymentSchemes = AllowedPaymentSchemes.Chaps,
-                Balance = origBalance
+                Balance = origBalance,
+                Status = AccountStatus.Live
             };
 
             mockAccountDataStore.Setup(x => x.GetAccount("ExistingAccount")) // Mock the GetAccount method to return a valid account with Chaps allowed
@@ -117,11 +136,42 @@ namespace Arrow.DeveloperTest.Tests
         }
 
         [Fact]
+        public void MakePayment_ChapsScheme_DisabledAccountStatus_Failure()
+        {
+            // Arrange
+            var mockAccountDataStore = new Mock<IAccountDataStore>();
+            var paymentService = new PaymentService(mockAccountDataStore.Object, _paymentValidationStrategies);
+            var origBalance = 100;
+            var paymentRequest = new MakePaymentRequest
+            {
+                DebtorAccountNumber = "ExistingAccount",
+                PaymentScheme = PaymentScheme.Chaps,
+                Amount = 10
+            };
+            var account = new Account
+            {
+                AllowedPaymentSchemes = AllowedPaymentSchemes.Chaps,
+                Balance = origBalance,
+                Status= AccountStatus.Disabled
+            };
+
+            mockAccountDataStore.Setup(x => x.GetAccount("ExistingAccount")) // Mock the GetAccount method to return a valid account with Chaps allowed
+                                .Returns(account);
+
+            // Act
+            var result = paymentService.MakePayment(paymentRequest);
+
+            // Assert
+            Assert.False(result.Success);
+            mockAccountDataStore.Verify(x => x.UpdateAccount(It.IsAny<Account>()), Times.Never); // Verify that UpdateAccount was NOT called
+        }
+
+        [Fact]
         public void MakePayment_ChapsScheme_AccountNotFound_Failure()
         {
             // Arrange
             var mockAccountDataStore = new Mock<IAccountDataStore>();
-            var bacsPaymentService = new PaymentService(mockAccountDataStore.Object);
+            var bacsPaymentService = new PaymentService(mockAccountDataStore.Object, _paymentValidationStrategies);
             var request = new MakePaymentRequest
             {
                 DebtorAccountNumber = "NonExistingAccount",
@@ -143,7 +193,7 @@ namespace Arrow.DeveloperTest.Tests
         {
             // Arrange
             var mockAccountDataStore = new Mock<IAccountDataStore>();
-            var bacsPaymentService = new PaymentService(mockAccountDataStore.Object);
+            var bacsPaymentService = new PaymentService(mockAccountDataStore.Object, _paymentValidationStrategies);
             var request = new MakePaymentRequest
             {
                 DebtorAccountNumber = "ExistingAccount",
@@ -162,11 +212,11 @@ namespace Arrow.DeveloperTest.Tests
         }
 
         [Fact]
-        public void MakePayment_FasterPaymentsScheme_SuccessfulPayment_UpdateAccountCalled()
+        public void MakePayment_FasterPaymentsScheme_BalanceMoreThanPaymentAmount_SuccessfulPayment_UpdateAccountCalledWithNewBalance()
         {
             // Arrange
             var mockAccountDataStore = new Mock<IAccountDataStore>();
-            var paymentService = new PaymentService(mockAccountDataStore.Object);
+            var paymentService = new PaymentService(mockAccountDataStore.Object, _paymentValidationStrategies);
             var origBalance = 100;
             var paymentRequest = new MakePaymentRequest
             {
@@ -193,11 +243,41 @@ namespace Arrow.DeveloperTest.Tests
         }
 
         [Fact]
+        public void MakePayment_FasterPaymentsScheme_BalanceLessThanPaymentAmount_Failure ()
+        {
+            // Arrange
+            var mockAccountDataStore = new Mock<IAccountDataStore>();
+            var paymentService = new PaymentService(mockAccountDataStore.Object, _paymentValidationStrategies);
+            var origBalance = 100;
+            var paymentRequest = new MakePaymentRequest
+            {
+                DebtorAccountNumber = "ExistingAccount",
+                PaymentScheme = PaymentScheme.FasterPayments,
+                Amount = 101
+            };
+            var account = new Account
+            {
+                AllowedPaymentSchemes = AllowedPaymentSchemes.FasterPayments,
+                Balance = origBalance
+            };
+
+            mockAccountDataStore.Setup(x => x.GetAccount("ExistingAccount")) // Mock the GetAccount method to return a valid account with FasterPayments allowed
+                                .Returns(account);
+
+            // Act
+            var result = paymentService.MakePayment(paymentRequest);
+
+            // Assert
+            Assert.False(result.Success);
+            mockAccountDataStore.Verify(x => x.UpdateAccount(It.IsAny<Account>()), Times.Never); // Verify that UpdateAccount was NOT called
+        }
+
+        [Fact]
         public void MakePayment_FasterPaymentsScheme_AccountNotFound_Failure()
         {
             // Arrange
             var mockAccountDataStore = new Mock<IAccountDataStore>();
-            var bacsPaymentService = new PaymentService(mockAccountDataStore.Object);
+            var bacsPaymentService = new PaymentService(mockAccountDataStore.Object, _paymentValidationStrategies);
             var request = new MakePaymentRequest
             {
                 DebtorAccountNumber = "NonExistingAccount",
@@ -219,7 +299,7 @@ namespace Arrow.DeveloperTest.Tests
         {
             // Arrange
             var mockAccountDataStore = new Mock<IAccountDataStore>();
-            var bacsPaymentService = new PaymentService(mockAccountDataStore.Object);
+            var bacsPaymentService = new PaymentService(mockAccountDataStore.Object, _paymentValidationStrategies);
             var request = new MakePaymentRequest
             {
                 DebtorAccountNumber = "ExistingAccount",
