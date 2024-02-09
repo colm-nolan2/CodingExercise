@@ -49,12 +49,14 @@ namespace Arrow.DeveloperTest.Services
         /// <returns>bool</returns>
         private bool IsValidPayment(Account account, MakePaymentRequest request)
         {
+            var isValid = false;
+
             if (_paymentValidationStrategies.TryGetValue(request.PaymentScheme, out var strategy))
             {
-                return strategy.IsValid(account, request);
+                isValid = strategy.IsValid(account, request);
             }
             
-            return false; // Unknown payment scheme
+            return isValid; // Unknown payment scheme
         }
     }
 }
